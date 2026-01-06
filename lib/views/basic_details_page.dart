@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:loginlogoutapp/getinfopage.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-//import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:provider/provider.dart';
+import '../viewModels/login_view_model.dart';
+import 'profile_details.dart';
 import 'login_page.dart';
 
 class HomePage extends StatelessWidget {
@@ -22,18 +22,10 @@ class HomePage extends StatelessWidget {
     required this.role,
   });
 
+  // Logout 
   Future<void> logout(BuildContext context) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); //.remove('jwt_token'); // remove only token
-//Future<void> logout(BuildContext context) async {
-//       FlutterSecureStorage(
-//       aOptions: const AndroidOptions( //its for android
-//       encryptedSharedPreferences: true,
-//   ),
-// );
-
-    // final FlutterSecureStorage prefs = FlutterSecureStorage();
-    // await prefs.deleteAll(); //.delete(key: 'token');
+    final authViewModel = Provider.of<LoginViewModel>(context, listen: false);
+    await authViewModel.logout();
 
     Navigator.pushReplacement(
         context, MaterialPageRoute(builder: (context) => const LoginPage()));

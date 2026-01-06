@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'login_page.dart';
-import 'basic_details_page.dart';
+import 'package:provider/provider.dart';
+//import 'package:shared_preferences/shared_preferences.dart';
+import 'views/login_page.dart';
+import 'viewModels/login_view_model.dart';
+import 'viewModels/profile_view_model.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,14 +14,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Login Demo',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LoginViewModel()),
+        ChangeNotifierProvider(create: (_) => ProfileViewModel()),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Login Demo',
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(133, 110, 232, 158)),
+        ),
+        home: const SplashPage(),
       ),
-      home: const SplashPage(),
     );
   }
 }
@@ -33,29 +41,16 @@ class SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<SplashPage> {
-  Future<void> checkLogin() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('jwt_token');
-
-    if (token != null && token.isNotEmpty) {
-      // Token exists → go to HomePage
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-      );
-    } else {
-      // Token missing or empty → go to LoginPage
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-      );
-    }
-  }
-
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration.zero, checkLogin);
+    // Simple delay then go to LoginPage
+    Future.delayed(const Duration(seconds: 1), () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      );
+    });
   }
 
   @override
@@ -65,15 +60,3 @@ class _SplashPageState extends State<SplashPage> {
     );
   }
 }
-
-
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
-  }
-
-
-
