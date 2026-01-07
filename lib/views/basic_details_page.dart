@@ -22,7 +22,7 @@ class HomePage extends StatelessWidget {
     required this.role,
   });
 
-  // Logout 
+  // Logout method
   Future<void> logout(BuildContext context) async {
     final authViewModel = Provider.of<LoginViewModel>(context, listen: false);
     await authViewModel.logout();
@@ -40,8 +40,51 @@ class HomePage extends StatelessWidget {
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => logout(context),
+            icon: const Icon(Icons.logout, ),
+            
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    title: const Column(
+                      mainAxisAlignment : MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Icon(Icons.logout, size: 50, color: Colors.orange),
+                        SizedBox(height: 20),
+                        Text(' LOGOUT !', style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),textAlign: TextAlign.center,),
+                        SizedBox(height: 20),
+                        Text("Do you want to logout !!", style: TextStyle(fontSize: 15,), textAlign: TextAlign.center),
+                      ],
+                    ),
+                    content: const SizedBox(height: 5),
+                    actions: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            style: TextButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), minimumSize: const Size(100, 40), elevation: 5),
+                            child: const Text("No"),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              logout(context);
+                            },
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), minimumSize: const Size(100, 40), elevation: 5),
+                            child: const Text("Yes"),
+                          ),
+                        ],
+                        
+                      ),
+                    ],
+                    
+                  );
+                },
+              );
+            },
             tooltip: "Logout",
           ),
           ElevatedButton(
