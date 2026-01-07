@@ -1,22 +1,15 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/basic_details_model.dart';
 
-// This has login wala API
-//Authenticate the user on basis of email and password
+class LoginController extends GetxController {
+  var isLoading = false.obs;
+  var errorMessage = ''.obs;
+  Rx<User?> currentUser = Rx<User?>(null);
 
-class LoginViewModel extends ChangeNotifier {
-  User? _currentUser;
-  bool _isLoading = false;
-  String? _errorMessage;
-
-  // Getters
-  User? get currentUser => _currentUser;
-  bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
-
+  // Login method
   Future<Map<String, dynamic>> loginUser(String email, String password) async {
     if (email.isEmpty || password.isEmpty) {
       return {
@@ -25,19 +18,16 @@ class LoginViewModel extends ChangeNotifier {
       };
     }
 
-    _isLoading = true;
-    notifyListeners();
+    isLoading.value = true;
 
     try {
       final response = await http.post(
-        Uri.parse(
-            'https://guidebooky-hezekiah-nonoperative.ngrok-free.dev/dating_backend_springboot/admin/Authentication/login'),
+        Uri.parse('https://guidebooky-hezekiah-nonoperative.ngrok-free.dev/dating_backend_springboot/admin/Authentication/login'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"email": email, "password": password}),
       );
 
-      _isLoading = false;
-      notifyListeners();
+      isLoading.value = false;
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -52,16 +42,15 @@ class LoginViewModel extends ChangeNotifier {
             };
           }
 
-          // Save token 
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('jwt_token', token);
 
           // Create User model from response
-          _currentUser = User.fromApiResponse(data['payload']);
+          currentUser.value = User.fromApiResponse(data['payload']);
 
           return {
             'success': true,
-            'user': _currentUser
+            'user': currentUser.value
           };
         } else {
           return {
@@ -76,8 +65,7 @@ class LoginViewModel extends ChangeNotifier {
         };
       }
     } catch (e) {
-      _isLoading = false;
-      notifyListeners();
+      isLoading.value = false;
       return {
         'success': false,
         'message': 'Something went wrong: $e'
@@ -85,11 +73,10 @@ class LoginViewModel extends ChangeNotifier {
     }
   }
 
-  // logout
+  // Logout method
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-    _currentUser = null;
-    notifyListeners();
+    currentUser.value = null;
   }
 }

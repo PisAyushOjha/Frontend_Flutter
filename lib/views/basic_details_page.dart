@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../viewModels/login_view_model.dart';
+import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../controllers/profile_controller.dart';
 import 'profile_details.dart';
 import 'login_page.dart';
+import 'edit_form_page.dart';
 
 class HomePage extends StatelessWidget {
   final String userId;
@@ -22,13 +24,21 @@ class HomePage extends StatelessWidget {
     required this.role,
   });
 
-  // Logout method
-  Future<void> logout(BuildContext context) async {
-    final authViewModel = Provider.of<LoginViewModel>(context, listen: false);
-    await authViewModel.logout();
-
-    Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => const LoginPage()));
+  Future<void> logout() async {
+    try {
+      // Clear SharedPreferences directly - this is the most reliable way
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      
+      print('Logout successful - navigating to login');
+      
+      // Navigate to login page and clear all previous routes
+      Get.offAll(() => const LoginPage());
+    } catch (e) {
+      print('Logout error: $e');
+      // Even if there's an error clearing prefs, navigate to login
+      Get.offAll(() => const LoginPage());
+    }
   }
 
   @override
@@ -40,59 +50,71 @@ class HomePage extends StatelessWidget {
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout, ),
-            
+            icon: const Icon(Icons.logout),
             onPressed: () {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                    title: const Column(
-                      mainAxisAlignment : MainAxisAlignment.spaceEvenly,
+              Get.dialog(
+                AlertDialog(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15)),
+                  title: const Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Icon(Icons.logout, size: 50, color: Colors.orange),
+                      SizedBox(height: 20),
+                      Text(
+                        ' LOGOUT !',
+                        style: TextStyle(
+                            fontSize: 25, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 20),
+                      Text("Do you want to logout !!",
+                          style: TextStyle(fontSize: 15),
+                          textAlign: TextAlign.center),
+                    ],
+                  ),
+                  content: const SizedBox(height: 5),
+                  actions: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        Icon(Icons.logout, size: 50, color: Colors.orange),
-                        SizedBox(height: 20),
-                        Text(' LOGOUT !', style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),textAlign: TextAlign.center,),
-                        SizedBox(height: 20),
-                        Text("Do you want to logout !!", style: TextStyle(fontSize: 15,), textAlign: TextAlign.center),
+                        ElevatedButton(
+                          onPressed: () => Get.back(),
+                          style: TextButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                              minimumSize: const Size(100, 40),
+                              elevation: 5),
+                          child: const Text("No"),
+                        ),
+                        ElevatedButton(
+                          onPressed: () async {
+                           
+                            Get.back(); // Close dialog first
+                            await logout(); // Then logout
+                          },
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                              minimumSize: const Size(100, 40),
+                              elevation: 5),
+                          child: const Text("Yes"),
+                        ),
                       ],
                     ),
-                    content: const SizedBox(height: 5),
-                    actions: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            style: TextButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), minimumSize: const Size(100, 40), elevation: 5),
-                            child: const Text("No"),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                              logout(context);
-                            },
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), minimumSize: const Size(100, 40), elevation: 5),
-                            child: const Text("Yes"),
-                          ),
-                        ],
-                        
-                      ),
-                    ],
-                    
-                  );
-                },
+                  ],
+                ),
               );
             },
             tooltip: "Logout",
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const DispDetails()),
-              );
+              Get.to(() => const DispDetails());
             },
             child: const Text("Profile"),
           ),
@@ -112,6 +134,33 @@ class HomePage extends StatelessWidget {
               buildDetailRow("Status", status),
               buildDetailRow("Package Status", packageStatus),
               buildDetailRow("Role", role),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  final profileController = Get.find<ProfileController>();
+                  profileController.loadProfile().then((_) {
+                    Get.bottomSheet(
+                      const EditProfileBottomSheet(),
+                      isScrollControlled: true,
+                      backgroundColor: Colors.white,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                      ),
+                    );
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    foregroundColor: Colors.green[300],
+                    backgroundColor: Colors.green[400],
+                    minimumSize: const Size(150, 50)),
+                child: const Text(
+                  "Edit",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
               const SizedBox(height: 20),
             ],
           ),

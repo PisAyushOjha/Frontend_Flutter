@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
-import 'package:provider/provider.dart';
+import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../viewModels/profile_view_model.dart';
+import '../controllers/profile_controller.dart';
 
 class DispDetails extends StatefulWidget {
   const DispDetails({super.key});
@@ -17,24 +16,25 @@ class _DispDisplayState extends State<DispDetails> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ProfileViewModel>(context, listen: false).loadProfile();
+      Get.find<ProfileController>().loadProfile();
     });
   }
 
   // card building
-  Widget buildProfileCard(ProfileViewModel profileViewModel) {
-    final name = profileViewModel
-        .getFieldValue(['name', 'fullname', 'full_name', 'username']);
-    final mobile = profileViewModel
-        .getFieldValue(['mobile', 'phone', 'contact', 'phone_number']);
-    final city =
-        profileViewModel.getFieldValue(['city', 'location', 'address']);
-    final email = profileViewModel.getFieldValue(['email', 'email_address']);
-    final role =
-        profileViewModel.getFieldValue(['role', 'position', 'designation']);
-    final latitude = profileViewModel.getFieldValue(['latitude', 'lat']);
-    final longitude =
-        profileViewModel.getFieldValue(['longitude', 'lng', 'lon']);
+  Widget buildProfileCard(ProfileController profilecontroller) {
+    final name = profilecontroller.getFieldValue(['name', 'fullname', 'full_name', 'username']);
+
+    final mobile = profilecontroller.getFieldValue(['mobile', 'phone', 'contact', 'phone_number']);
+
+    final city =profilecontroller.getFieldValue(['city', 'location', 'address']);
+
+    final email = profilecontroller.getFieldValue(['email', 'email_address']);
+
+    final role =profilecontroller.getFieldValue(['role', 'position', 'designation']);
+
+    final latitude = profilecontroller.getFieldValue(['latitude', 'lat']);
+    
+    final longitude =profilecontroller.getFieldValue(['longitude', 'lng', 'lon']);
 
     return Card(
       margin: const EdgeInsets.all(16),
@@ -59,7 +59,7 @@ class _DispDisplayState extends State<DispDetails> {
             if (email.isNotEmpty) buildCardRow(Icons.email, "Email", email),
             if (role.isNotEmpty) buildCardRow(Icons.work, "Role", role),
             if (latitude.isNotEmpty && longitude.isNotEmpty)
-              buildLocationCardRow(profileViewModel),
+              buildLocationCardRow(profilecontroller),
           ],
         ),
       ),
@@ -102,7 +102,7 @@ class _DispDisplayState extends State<DispDetails> {
   }
 
   // Google Maps
-  Widget buildLocationCardRow(ProfileViewModel profileViewModel) {
+  Widget buildLocationCardRow(ProfileController profilecontroller) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -125,8 +125,8 @@ class _DispDisplayState extends State<DispDetails> {
                 GestureDetector(
                   onTap: () async {
                     final latitude =
-                        profileViewModel.getFieldValue(['latitude', 'lat']);
-                    final longitude = profileViewModel
+                        profilecontroller.getFieldValue(['latitude', 'lat']);
+                    final longitude = profilecontroller
                         .getFieldValue(['longitude', 'lng', 'lon']);
                     if (latitude.isNotEmpty && longitude.isNotEmpty) {
                       final url =
@@ -157,44 +157,21 @@ class _DispDisplayState extends State<DispDetails> {
 
   @override
   Widget build(BuildContext context) {
+    final profileController = Get.find<ProfileController>();
+    
     return Scaffold(
       appBar: AppBar(title: const Text("Profile")),
-      body: Consumer<ProfileViewModel>(
-        builder: (context, profileViewModel, child) {
-          return Stack(
-            children: [
-              // backgroung
-              Positioned.fill(
-                child: Lottie.asset(
-                  'assets/fire.json', 
-                  fit: BoxFit.fill,
-                ),
-              ),
+      body: Obx(() {
+          if (profileController.isLoading.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-              //  Overlay
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black.withOpacity(0.4),
-                ),
-              ),
+          if (profileController.errorMessage.isNotEmpty) {
+            return Center(child: Text(profileController.errorMessage.value));
+          }
 
-              
-              if (profileViewModel.isLoading)
-                const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                )
-              else if (profileViewModel.errorMessage.isNotEmpty)
-                Center(
-                  child: Text(
-                    profileViewModel.errorMessage,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                )
-              else
-                SingleChildScrollView(
-                  child: buildProfileCard(profileViewModel),
-                ),
-            ],
+          return SingleChildScrollView(
+            child: buildProfileCard(profileController),
           );
         },
       ),
